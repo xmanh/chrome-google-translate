@@ -1,0 +1,32 @@
+{
+  "manifest_version": 2,
+  "name": "Google Translate",
+  "version": "1.0.0",
+
+  "description": "Auto translate with Google.",
+
+  "background": {
+    "scripts": ["js/background.js"]
+  },
+
+  "browser_action": {
+    "default_icon": "icons/icon48.png",
+    "default_popup": "popup.html",
+    "default_title": "Google Translate"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["js/content_script.js"]
+    }
+  ],
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "https://translate.googleapis.com/*",
+    "http://*/*",
+    "https://*/*"
+  ]
+}
