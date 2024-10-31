@@ -1,55 +1,33 @@
-if (!localStorage["lang"]) {
-  localStorage["lang"] = "vi";
-}
-// chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-//   chrome.tabs.executeScript(tabId, {
-//     file: "js/content_script.js",
-//     // allFrames: true,
-//   });
-// });
+const translate = async (input) => {
+  try {
+    const items = await chrome.storage.sync.get(['xLang']);
+    const targetLang = items['xLang'] ? items['xLang'] : 'vi';
 
-chrome.extension.onConnect.addListener(function (port) {
-  port.onMessage.addListener(function (m) {
-    switch (m.message) {
-      case "translate":
-        translate(m.text, port);
-        break;
-    }
-  });
-});
-
-function translate(text, port) {
-  if (!localStorage["lang"]) {
-    targetLang = "vi";
-  } else {
-    targetLang = localStorage["lang"];
-  }
-  chrome.storage.sync.get("lang", (items) => {
-    var targetLang = items["lang"] ? items["lang"] : "vi";
-
-    var url =
-      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
+    const url =
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
       targetLang +
-      "&dt=t&q=" +
-      encodeURI(text);
+      '&dt=t&q=' +
+      encodeURI(input);
 
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4) {
-        try {
-          result = JSON.parse(xhr.responseText);
-          if (result[0] != "") {
-            port.postMessage({
-              message: "result",
-              result: result[0],
-            });
-          }
-        } catch (error) {
-          console.log('Google Translate limited.')
-        }
-      }
-    };
-    xhr.send();
-  });
-}
+    const response = await fetch(url);
+    const result = await response.json();
+
+    const data = result[0] || {};
+    let output = '';
+    for (let i in data) {
+      output += data[i][0];
+    }
+
+    return output;
+  } catch (error) {
+    console.error('translate', error);
+    return '';
+  }
+};
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.method === 'translate') {
+    translate(msg.data).then(sendResponse);
+  }
+  return true;
+});
